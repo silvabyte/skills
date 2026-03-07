@@ -8,6 +8,7 @@ Reusable skills for team coding agents.
 |-------|-------------|
 | [wb-drive](skills/wb-drive) | Weekend Business Shared Drive management |
 | [fizzy](skills/fizzy) | Fizzy board and task management |
+| [orthogonal-code](skills/orthogonal-code) | Writing and reviewing orthogonal (decoupled) code |
 
 ## Installation
 
