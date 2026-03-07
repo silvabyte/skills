@@ -7,6 +7,7 @@ Reusable skills for team coding agents.
 | Skill | Description |
 |-------|-------------|
 | [wb-drive](skills/wb-drive) | Weekend Business Shared Drive management |
+| [fizzy](skills/fizzy) | Fizzy board and task management |
 
 ## Installation
 
