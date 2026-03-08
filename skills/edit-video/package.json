@@ -1,0 +1,11 @@
+{
+  "name": "edit-video",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}

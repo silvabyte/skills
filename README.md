@@ -10,6 +10,7 @@ Reusable skills for team coding agents.
 | [fizzy](skills/fizzy) | Fizzy board and task management |
 | [orthogonal-code](skills/orthogonal-code) | Writing and reviewing orthogonal (decoupled) code |
 | [marketing-principles](skills/marketing-principles) | Apply proven marketing principles for compelling copy, campaigns, and brand positioning |
+| [edit-video](skills/edit-video) | Conversational video editing: transcribe, plan edits with transcript analysis, render |
 
 ## Installation
 
