@@ -1,6 +1,12 @@
 ---
 name: marketing-principles
-description: Apply proven marketing principles for compelling copy, campaigns, and brand positioning. Use when writing marketing copy, taglines, product descriptions, campaign concepts, brand messaging, landing pages, or any customer-facing content. Triggers: "marketing copy", "tagline", "campaign", "brand voice", "product messaging", "landing page copy", "value proposition", "brand positioning", "launch announcement", "promotional content".
+description: >-
+  Apply proven marketing principles for compelling copy, campaigns, and brand positioning.
+  Use when writing marketing copy, taglines, product descriptions, campaign concepts, brand
+  messaging, landing pages, or any customer-facing content.
+  Triggers: "marketing copy", "tagline", "campaign", "brand voice", "product messaging",
+  "landing page copy", "value proposition", "brand positioning", "launch announcement",
+  "promotional content".
 ---
 
 # Marketing Principles
