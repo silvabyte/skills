@@ -9,6 +9,7 @@ Reusable skills for team coding agents.
 | [wb-drive](skills/wb-drive) | Weekend Business Shared Drive management |
 | [fizzy](skills/fizzy) | Fizzy board and task management |
 | [orthogonal-code](skills/orthogonal-code) | Writing and reviewing orthogonal (decoupled) code |
+| [marketing-principles](skills/marketing-principles) | Apply proven marketing principles for compelling copy, campaigns, and brand positioning |
 
 ## Installation
 
