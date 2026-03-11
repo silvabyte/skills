@@ -7,7 +7,8 @@ description: |
   (3) User wants to create a highlight reel or narrative cut from a longer video
   (4) User mentions EDL, transcript analysis, or video editing workflow
   (5) User wants to remove filler, dead air, or silence from a video
-  Triggers: "edit video", "transcribe video", "trim video", "cut video", "EDL", "video editing", "remove filler"
+  (6) User wants to combine multiple clips into one video
+  Triggers: "edit video", "transcribe video", "trim video", "cut video", "EDL", "video editing", "remove filler", "combine videos", "stitch clips", "multiple clips"
 ---
 
 # Edit Video
@@ -18,14 +19,12 @@ Conversational video editing in three phases: transcribe, plan the edit, render.
 
 - **bun** — TypeScript runtime
 - **ffmpeg** / **ffprobe** — video processing (must be on PATH)
-- **whisper-cli** — speech-to-text (local whisper.cpp build)
 
 Environment variables (optional, have defaults):
 
 | Variable | Purpose | Default |
 |----------|---------|---------|
-| `WHISPER_CLI_PATH` | Path to whisper-cli binary | `~/code/matsilva/whisper/build/bin/whisper-cli` |
-| `WHISPER_MODEL_PATH` | Path to whisper GGML model | `~/code/matsilva/whisper/models/ggml-large-v3-turbo-q5_1.bin` |
+| `AUDETIC_API_URL` | Audetic transcription service URL | `https://audio.audetic.link` |
 
 ## Commands
 
@@ -33,11 +32,12 @@ All paths are relative to this skill's directory. Run with `bun run`.
 
 | Command | Purpose |
 |---------|---------|
-| `scripts/transcribe.ts <video>` | Transcribe video, produce JSON + markdown transcript + analysis |
+| `scripts/transcribe.ts <video>` | Transcribe a single video file — produces JSON + markdown transcript + analysis alongside the file |
+| `scripts/transcribe.ts <directory>` | Transcribe all video files in a directory — produces merged JSON + markdown transcript + analysis in the directory |
 | `scripts/preview.ts <edl.json>` | Validate and preview an EDL before rendering |
 | `scripts/render.ts <edl.json>` | Render final video from EDL using ffmpeg stream copy |
 
-## Workflow
+## Workflow — Single File
 
 ### 1. Transcribe
 
@@ -45,8 +45,8 @@ All paths are relative to this skill's directory. Run with `bun run`.
 bun run scripts/transcribe.ts <video-file>
 ```
 
-Produces three files alongside the video:
-- `.json` — raw whisper output (used by tools)
+Compresses audio to MP3, uploads to the audetic transcription service, and produces three files alongside the video:
+- `.json` — transcription result (used by tools)
 - `-transcript.md` — readable transcript table
 - `-analysis.md` — transcript with signal flags (gaps, speech rate)
 
@@ -69,15 +69,15 @@ When the edit plan is decided, write an EDL (Edit Decision List) JSON file:
 
 ```json
 {
-  "source": "/absolute/path/to/video.mp4",
   "output": "/absolute/path/to/output.mp4",
   "segments": [
-    { "start": "00:00:00.000", "end": "00:02:15.500", "label": "Introduction" },
-    { "start": "00:05:30.000", "end": "00:12:45.200", "label": "Main discussion" }
+    { "source": "/absolute/path/to/video.mp4", "start": "00:00:00.000", "end": "00:02:15.500", "label": "Introduction" },
+    { "source": "/absolute/path/to/video.mp4", "start": "00:05:30.000", "end": "00:12:45.200", "label": "Main discussion" }
   ]
 }
 ```
 
+- Each segment requires a `source` field with the absolute path to its source video
 - Timestamps must be `HH:MM:SS.mmm` format (ffmpeg-native)
 - Segments are in playback order — rearranging segments reorders the output
 - `label` is optional, helps communicate what each segment is
@@ -101,6 +101,40 @@ bun run scripts/render.ts <edl.json>
 
 Uses ffmpeg stream copy (fast, cuts at nearest keyframe). Produces the final video.
 
+## Workflow — Multiple Clips (Directory)
+
+Use this when the user has multiple short clips that should be edited into a single video.
+
+### 1. Transcribe All Clips
+
+```bash
+bun run scripts/transcribe.ts <directory>
+```
+
+Finds all video files (`*.mp4`, `*.mkv`, `*.mov`, `*.webm`, `*.ts`), transcribes each one, and produces merged output in the directory:
+- `transcript.json` — merged transcript with `source` field on each segment
+- `transcript.md` — merged readable table with Source column
+- `analysis.md` — merged analysis with Source column (gap detection resets at clip boundaries)
+
+### 2. Plan the Edit
+
+Same process as single-file, but the transcript and analysis include a Source column showing which clip each segment came from. Write an EDL with per-segment `source` paths:
+
+```json
+{
+  "output": "/absolute/path/to/combined.mp4",
+  "segments": [
+    { "source": "/absolute/path/to/clip001.mp4", "start": "00:00:02.000", "end": "00:00:12.000", "label": "Opening" },
+    { "source": "/absolute/path/to/clip003.mp4", "start": "00:00:00.000", "end": "00:00:08.500", "label": "Key moment" },
+    { "source": "/absolute/path/to/clip007.mp4", "start": "00:00:01.000", "end": "00:00:14.000", "label": "Closing" }
+  ]
+}
+```
+
+### 3. Preview + Render
+
+Same as single-file workflow. Preview lists all sources with durations and shows source filename per segment.
+
 ## Narrative Editing
 
 Use narrative editing when the user provides a goal beyond "trim the filler" — a theme, tone, target duration, or audience.
@@ -121,18 +155,19 @@ See [references/narrative-patterns.md](references/narrative-patterns.md) for the
 Example:
 ```json
 {
-  "source": "/path/to/video.mp4",
   "output": "/path/to/output.mp4",
   "narrative_notes": "Goal: 60s punchy clip. Led with the reaction for hook, then backed into the setup.",
   "segments": [
-    { "start": "00:05:30.000", "end": "00:05:55.000", "label": "HOOK: surprised reaction" },
-    { "start": "00:01:00.000", "end": "00:02:15.500", "label": "SETUP: reading the tweet" },
-    { "start": "00:06:00.000", "end": "00:06:30.000", "label": "PAYOFF: final take" }
+    { "source": "/path/to/video.mp4", "start": "00:05:30.000", "end": "00:05:55.000", "label": "HOOK: surprised reaction" },
+    { "source": "/path/to/video.mp4", "start": "00:01:00.000", "end": "00:02:15.500", "label": "SETUP: reading the tweet" },
+    { "source": "/path/to/video.mp4", "start": "00:06:00.000", "end": "00:06:30.000", "label": "PAYOFF: final take" }
   ]
 }
 ```
 
 ## Output File Naming
+
+### Single-file mode
 
 The `outputPaths` function in `scripts/lib/config.ts` generates standard paths relative to the video:
 
@@ -144,17 +179,38 @@ The `outputPaths` function in `scripts/lib/config.ts` generates standard paths r
 | EDL | `<name>-edl.json` |
 | Edited video | `<name>-edited.mp4` |
 
+### Directory mode
+
+The `directoryOutputPaths` function generates paths inside the directory:
+
+| Output | Pattern |
+|--------|---------|
+| Transcript JSON | `transcript.json` |
+| Transcript MD | `transcript.md` |
+| Analysis MD | `analysis.md` |
+
 ## Session Flow
 
-Typical step-by-step for a full edit session:
+### Single file
 
 1. User provides a video file path
 2. Run `transcribe.ts` on it
 3. Read the `-analysis.md` and `-transcript.md` files
 4. Discuss with user what to keep/cut (or accept a narrative goal)
-5. Write the EDL JSON file
+5. Write the EDL JSON file (each segment has `source` pointing to the video)
 6. Run `preview.ts` to validate — review with user
 7. Run `render.ts` to produce the final video
+8. Report output path and final duration
+
+### Multiple clips
+
+1. User provides a directory of clips
+2. Run `transcribe.ts` on the directory
+3. Read the merged `analysis.md` and `transcript.md` in the directory
+4. Discuss with user which clips/segments to include
+5. Write the EDL JSON file (each segment has `source` pointing to its clip)
+6. Run `preview.ts` to validate — review with user
+7. Run `render.ts` to produce the combined video
 8. Report output path and final duration
 
 ## Tips
@@ -164,3 +220,4 @@ Typical step-by-step for a full edit session:
 - **Always preview first**: Never render without previewing. The preview catches validation errors and lets the user confirm before committing.
 - **Duration targeting**: When given a target duration, sum the `Dur` column values from the analysis for selected segments. Iterate until the EDL fits.
 - **Reinterpret signals**: Gaps aren't just cut candidates — they mark topic boundaries. Slow segments aren't always boring — a pause before a realization can be dramatic.
+- **Mixed codecs**: When combining clips from different sources, the preview tool warns about mixed file extensions. Clips from the same device/app are usually safe.

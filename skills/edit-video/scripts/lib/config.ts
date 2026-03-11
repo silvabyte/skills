@@ -1,14 +1,8 @@
 import { join, dirname, basename } from "path";
 
-export const WHISPER_CLI =
-  process.env.WHISPER_CLI_PATH ??
-  "/home/matsilva/code/matsilva/whisper/build/bin/whisper-cli";
-export const WHISPER_MODEL =
-  process.env.WHISPER_MODEL_PATH ??
-  "/home/matsilva/code/matsilva/whisper/models/ggml-large-v3-turbo-q5_1.bin";
-
-/** Number of threads for whisper (defaults to all available CPUs) */
-export const WHISPER_THREADS = navigator.hardwareConcurrency ?? 8;
+export const AUDETIC_API_URL =
+  process.env.AUDETIC_API_URL ?? "https://audio.audetic.link";
+export const AUDETIC_POLL_INTERVAL_MS = 3000;
 
 /** Build output paths relative to the video file */
 export function outputPaths(videoPath: string) {
@@ -22,3 +16,15 @@ export function outputPaths(videoPath: string) {
     output: join(dir, `${name}-edited.mp4`),
   };
 }
+
+/** Build output paths for directory (multi-file) mode */
+export function directoryOutputPaths(dirPath: string) {
+  return {
+    transcriptJson: join(dirPath, "transcript.json"),
+    transcriptMd: join(dirPath, "transcript.md"),
+    analysisMd: join(dirPath, "analysis.md"),
+  };
+}
+
+/** Video file extensions to look for in directory mode */
+export const VIDEO_EXTENSIONS = ["mp4", "mkv", "mov", "webm", "ts"];

@@ -1,4 +1,5 @@
-import type { WhisperResult } from "./whisper";
+import { basename } from "path";
+import type { WhisperResult } from "./audetic";
 
 /** Convert whisper comma-separated timestamp to ffmpeg dot format: 00:01:23,450 -> 00:01:23.450 */
 function normalizeTimestamp(ts: string): string {
@@ -12,12 +13,26 @@ function shortTimestamp(ts: string): string {
   return ts.replace(",", ".").replace(/\.\d{3}$/, "");
 }
 
+/** Truncate a filename for display in the table */
+function shortSource(source: string, maxLen = 24): string {
+  const name = basename(source);
+  if (name.length <= maxLen) return name;
+  return "..." + name.slice(-(maxLen - 3));
+}
+
 /** Convert Whisper JSON result to a numbered markdown table */
 export function toMarkdown(result: WhisperResult): string {
-  const lines: string[] = [
-    "| #  | Time                | Text                                    |",
-    "|----|---------------------|-----------------------------------------|",
-  ];
+  const hasSource = result.transcription.some((seg) => seg.source);
+
+  const lines: string[] = hasSource
+    ? [
+        "| #  | Source                   | Time                | Text                                    |",
+        "|----|--------------------------|---------------------|-----------------------------------------|",
+      ]
+    : [
+        "| #  | Time                | Text                                    |",
+        "|----|---------------------|-----------------------------------------|",
+      ];
 
   result.transcription.forEach((seg, i) => {
     const num = String(i + 1).padEnd(2);
@@ -25,7 +40,13 @@ export function toMarkdown(result: WhisperResult): string {
     const to = shortTimestamp(seg.timestamps.to);
     const time = `${from} - ${to}`;
     const text = seg.text.trim();
-    lines.push(`| ${num} | ${time} | ${text} |`);
+
+    if (hasSource) {
+      const src = seg.source ? shortSource(seg.source) : "-";
+      lines.push(`| ${num} | ${src.padEnd(24)} | ${time} | ${text} |`);
+    } else {
+      lines.push(`| ${num} | ${time} | ${text} |`);
+    }
   });
 
   return lines.join("\n") + "\n";

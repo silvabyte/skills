@@ -1,5 +1,5 @@
-import { resolve } from "path";
-import { EdlSchema, calculateDuration, formatDuration, parseTimestamp, formatTimestamp } from "./lib/edl";
+import { resolve, basename } from "path";
+import { EdlSchema, allSources, calculateDuration, formatDuration, parseTimestamp } from "./lib/edl";
 import { getVideoDuration } from "./lib/ffmpeg";
 
 const edlPath = process.argv[2];
@@ -26,35 +26,47 @@ if (!parsed.success) {
 }
 
 const edl = parsed.data;
+const sources = allSources(edl);
+const multiSource = sources.length > 1;
 
-// Check source exists
-const sourceFile = Bun.file(edl.source);
-if (!(await sourceFile.exists())) {
-  console.error(`Source video not found: ${edl.source}`);
-  process.exit(1);
+// Validate all source files exist and get durations
+let totalSourceMs = 0;
+for (const src of sources) {
+  const srcFile = Bun.file(src);
+  if (!(await srcFile.exists())) {
+    console.error(`Source video not found: ${src}`);
+    process.exit(1);
+  }
+  const dur = await getVideoDuration(src);
+  const durMs = Math.round(dur * 1000);
+  totalSourceMs += durMs;
+  if (multiSource) {
+    console.log(`Source: ${basename(src)}  [${formatDuration(durMs)}]`);
+  } else {
+    console.log(`Source:   ${src}`);
+  }
 }
 
-// Get total video duration
-const totalSeconds = await getVideoDuration(edl.source);
-const totalMs = Math.round(totalSeconds * 1000);
+if (multiSource) {
+  console.log(`\nTotal source material: ${formatDuration(totalSourceMs)}`);
+}
 
-const { keptMs } = calculateDuration(edl);
-const cutMs = totalMs - keptMs;
-
-console.log(`Source:   ${edl.source}`);
 console.log(`Output:   ${edl.output}`);
 console.log(`Segments: ${edl.segments.length}\n`);
 
 edl.segments.forEach((seg, i) => {
   const durMs = parseTimestamp(seg.end) - parseTimestamp(seg.start);
   const label = seg.label ? ` (${seg.label})` : "";
-  console.log(`  ${i + 1}. ${seg.start} -> ${seg.end}  [${formatDuration(durMs)}]${label}`);
+  const srcInfo = multiSource ? `  [${basename(seg.source)}]` : "";
+  console.log(`  ${i + 1}. ${seg.start} -> ${seg.end}  [${formatDuration(durMs)}]${srcInfo}${label}`);
 });
 
-// Detect non-chronological segment ordering
+// Detect non-chronological segment ordering (only within same source)
 const isReordered = edl.segments.some((seg, i) => {
   if (i === 0) return false;
-  return parseTimestamp(seg.start) < parseTimestamp(edl.segments[i - 1].start);
+  const prev = edl.segments[i - 1];
+  if (prev.source !== seg.source) return false;
+  return parseTimestamp(seg.start) < parseTimestamp(prev.start);
 });
 if (isReordered) {
   console.log(`\nNote: segments are reordered (narrative edit)`);
@@ -65,6 +77,7 @@ if (edl.narrative_notes) {
   console.log(`\nNarrative notes:\n${edl.narrative_notes}`);
 }
 
-console.log(`\nTotal duration: ${formatDuration(totalMs)}`);
-console.log(`Kept:           ${formatDuration(keptMs)} (${((keptMs / totalMs) * 100).toFixed(1)}%)`);
-console.log(`Cut:            ${formatDuration(cutMs)} (${((cutMs / totalMs) * 100).toFixed(1)}%)`);
+const { keptMs } = calculateDuration(edl);
+console.log(`\nTotal source: ${formatDuration(totalSourceMs)}`);
+console.log(`Output:       ${formatDuration(keptMs)} (${((keptMs / totalSourceMs) * 100).toFixed(1)}%)`);
+console.log(`Cut:          ${formatDuration(totalSourceMs - keptMs)} (${(((totalSourceMs - keptMs) / totalSourceMs) * 100).toFixed(1)}%)`);

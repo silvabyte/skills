@@ -7,13 +7,13 @@ const TimestampSchema = z.string().regex(timestampRegex, {
 });
 
 const SegmentSchema = z.object({
+  source: z.string(),
   start: TimestampSchema,
   end: TimestampSchema,
   label: z.string().optional(),
 });
 
 export const EdlSchema = z.object({
-  source: z.string(),
   output: z.string(),
   segments: z.array(SegmentSchema).min(1, "EDL must have at least one segment"),
   narrative_notes: z.string().optional(),
@@ -21,6 +21,11 @@ export const EdlSchema = z.object({
 
 export type Edl = z.infer<typeof EdlSchema>;
 export type Segment = z.infer<typeof SegmentSchema>;
+
+/** Get all unique source paths from an EDL */
+export function allSources(edl: Edl): string[] {
+  return [...new Set(edl.segments.map((seg) => seg.source))];
+}
 
 /** Parse HH:MM:SS.mmm to milliseconds */
 export function parseTimestamp(ts: string): number {

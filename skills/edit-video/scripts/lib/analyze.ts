@@ -1,7 +1,9 @@
-import type { WhisperResult } from "./whisper";
+import { basename } from "path";
+import type { WhisperResult } from "./audetic";
 
 export interface SegmentAnalysis {
   index: number;
+  source?: string;
   text: string;
   startMs: number;
   endMs: number;
@@ -34,7 +36,10 @@ export function analyzeTranscript(result: WhisperResult): AnalysisResult {
     const durationSec = durationMs / 1000;
     const text = seg.text.trim();
 
-    const prevEnd = i > 0 ? result.transcription[i - 1].offsets.to : startMs;
+    // Gap detection: reset at clip boundaries (different source files)
+    const prev = i > 0 ? result.transcription[i - 1] : null;
+    const sameSource = prev && prev.source === seg.source;
+    const prevEnd = sameSource ? prev.offsets.to : startMs;
     const gapBeforeMs = startMs - prevEnd;
 
     const words = countWords(text);
@@ -47,6 +52,7 @@ export function analyzeTranscript(result: WhisperResult): AnalysisResult {
 
     segments.push({
       index: i + 1,
+      source: seg.source,
       text,
       startMs,
       endMs,
@@ -64,12 +70,26 @@ export function analyzeTranscript(result: WhisperResult): AnalysisResult {
   return { segments, totalDurationMs };
 }
 
+/** Truncate a filename for display */
+function shortSource(source: string, maxLen = 24): string {
+  const name = basename(source);
+  if (name.length <= maxLen) return name;
+  return "..." + name.slice(-(maxLen - 3));
+}
+
 /** Markdown table with signal flags — no keep/cut decisions, that's the LLM's job */
 export function analysisToMarkdown(analysis: AnalysisResult): string {
-  const lines: string[] = [
-    "| #  | Time                | Dur  | WPS  | Flags           | Text |",
-    "|----|---------------------|------|------|-----------------|------|",
-  ];
+  const hasSource = analysis.segments.some((seg) => seg.source);
+
+  const lines: string[] = hasSource
+    ? [
+        "| #  | Source                   | Time                | Dur  | WPS  | Flags           | Text |",
+        "|----|--------------------------|---------------------|------|------|-----------------|------|",
+      ]
+    : [
+        "| #  | Time                | Dur  | WPS  | Flags           | Text |",
+        "|----|---------------------|------|------|-----------------|------|",
+      ];
 
   for (const seg of analysis.segments) {
     const num = String(seg.index).padEnd(2);
@@ -79,7 +99,13 @@ export function analysisToMarkdown(analysis: AnalysisResult): string {
     const dur = (seg.durationMs / 1000).toFixed(1) + "s";
     const wps = seg.wordsPerSecond.toFixed(1);
     const flags = seg.flags.join(", ") || "-";
-    lines.push(`| ${num} | ${time} | ${dur} | ${wps} | ${flags} | ${seg.text} |`);
+
+    if (hasSource) {
+      const src = seg.source ? shortSource(seg.source) : "-";
+      lines.push(`| ${num} | ${src.padEnd(24)} | ${time} | ${dur} | ${wps} | ${flags} | ${seg.text} |`);
+    } else {
+      lines.push(`| ${num} | ${time} | ${dur} | ${wps} | ${flags} | ${seg.text} |`);
+    }
   }
 
   lines.push("");
