@@ -38,8 +38,8 @@ async function transcribeSingleFile(videoPath: string) {
     const jobId = await submitJob(mp3Path);
     console.log(`Job ID: ${jobId}`);
 
-    const apiResult = await pollJob(jobId);
-    const result = toWhisperResult(apiResult);
+    const { result: apiResult, verboseResult } = await pollJob(jobId);
+    const result = toWhisperResult(apiResult, verboseResult);
 
     await Bun.write(paths.transcriptJson, JSON.stringify(result, null, 2));
 
@@ -101,8 +101,8 @@ async function transcribeDirectory(dirPath: string) {
       const jobId = await submitJob(mp3Path);
       console.log(`  Job ID: ${jobId}`);
 
-      const apiResult = await pollJob(jobId);
-      const result = toWhisperResult(apiResult);
+      const { result: apiResult, verboseResult } = await pollJob(jobId);
+      const result = toWhisperResult(apiResult, verboseResult);
 
       // Stamp source onto each segment
       for (const seg of result.transcription) {

@@ -14,6 +14,7 @@ export function outputPaths(videoPath: string) {
     analysisMd: join(dir, `${name}-analysis.md`),
     edl: join(dir, `${name}-edl.json`),
     output: join(dir, `${name}-edited.mp4`),
+    captionedOutput: join(dir, `${name}-captioned.mp4`),
   };
 }
 

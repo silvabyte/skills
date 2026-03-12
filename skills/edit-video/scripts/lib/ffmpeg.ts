@@ -143,6 +143,28 @@ export async function concatenateSegments(
   }
 }
 
+/** Burn ASS captions into video (re-encodes video track) */
+export async function burnCaptions(input: string, assPath: string, output: string): Promise<void> {
+  // Escape colons and backslashes for ffmpeg's filter parser
+  const escapedPath = assPath.replace(/\\/g, "\\\\").replace(/:/g, "\\:");
+  const proc = Bun.spawn(
+    [
+      "ffmpeg", "-y",
+      "-i", input,
+      "-vf", `ass=${escapedPath}`,
+      "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+      "-c:a", "copy",
+      output,
+    ],
+    { stdout: "ignore", stderr: "pipe" },
+  );
+  const exitCode = await proc.exited;
+  if (exitCode !== 0) {
+    const stderr = await new Response(proc.stderr).text();
+    throw new Error(`ffmpeg caption burn failed (code ${exitCode}): ${stderr}`);
+  }
+}
+
 /** Get video duration in seconds using ffprobe */
 export async function getVideoDuration(path: string): Promise<number> {
   const proc = Bun.spawn(

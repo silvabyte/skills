@@ -5,11 +5,18 @@ import { AUDETIC_API_URL, AUDETIC_POLL_INTERVAL_MS } from "./config";
 
 // ---------- Types shared with downstream modules ----------
 
+export interface WhisperWord {
+  word: string;      // merged real word, e.g., "arctic", "guava"
+  startMs: number;
+  endMs: number;
+}
+
 export interface WhisperSegment {
   source?: string; // absolute path to source file (set in multi-file mode)
   timestamps: { from: string; to: string };
   offsets: { from: number; to: number };
   text: string;
+  words?: WhisperWord[];
 }
 
 export interface WhisperResult {
@@ -34,6 +41,28 @@ interface ApiResult {
   language: string;
   provider: string;
   metadata: Record<string, string>;
+}
+
+// ---------- Verbose result types (word-level timestamps) ----------
+
+interface VerboseWord {
+  word: string;      // BPE token, e.g., " talking", "ctic", "."
+  start: number;     // seconds
+  end: number;       // seconds
+  probability: number;
+}
+
+interface VerboseSegment {
+  id: number;
+  text: string;
+  start: number;
+  end: number;
+  words: VerboseWord[];
+}
+
+interface VerboseResult {
+  text: string;
+  segments: VerboseSegment[];
 }
 
 // ---------- Compress to MP3 ----------
@@ -86,7 +115,7 @@ export async function submitJob(mp3Path: string): Promise<string> {
 
 // ---------- Poll for completion ----------
 
-export async function pollJob(jobId: string): Promise<ApiResult> {
+export async function pollJob(jobId: string): Promise<{ result: ApiResult; verboseResult?: VerboseResult }> {
   const maxIterations = 600; // 600 * 3s = 30 min
 
   for (let i = 0; i < maxIterations; i++) {
@@ -108,8 +137,11 @@ export async function pollJob(jobId: string): Promise<ApiResult> {
       if (!fullRes.ok) {
         throw new Error(`Job fetch failed (${fullRes.status}): ${await fullRes.text()}`);
       }
-      const body = (await fullRes.json()) as { success: boolean; job: { result: ApiResult } };
-      return body.job.result;
+      const body = (await fullRes.json()) as {
+        success: boolean;
+        job: { result: ApiResult; verboseResult?: VerboseResult };
+      };
+      return { result: body.job.result, verboseResult: body.job.verboseResult };
     }
 
     if (data.status === "failed" || data.status === "cancelled") {
@@ -138,18 +170,58 @@ function formatTimestamp(seconds: number): string {
   ].join(":") + "," + String(ms).padStart(3, "0");
 }
 
-export function toWhisperResult(apiResult: ApiResult): WhisperResult {
-  const transcription: WhisperSegment[] = apiResult.segments.map((seg) => ({
-    timestamps: {
-      from: formatTimestamp(seg.start),
-      to: formatTimestamp(seg.end),
-    },
-    offsets: {
-      from: Math.round(seg.start * 1000),
-      to: Math.round(seg.end * 1000),
-    },
-    text: seg.text,
-  }));
+/** Merge BPE tokens into real words using the "starts with space = new word" heuristic */
+function mergeTokensToWords(tokens: VerboseWord[]): WhisperWord[] {
+  const words: WhisperWord[] = [];
+
+  for (const token of tokens) {
+    if (token.word.startsWith(" ")) {
+      // New word — trim the leading space
+      words.push({
+        word: token.word.slice(1),
+        startMs: Math.round(token.start * 1000),
+        endMs: Math.round(token.end * 1000),
+      });
+    } else if (words.length > 0) {
+      // Continuation token — append to previous word, extend endMs
+      const prev = words[words.length - 1];
+      prev.word += token.word;
+      prev.endMs = Math.round(token.end * 1000);
+    } else {
+      // First token without leading space (rare edge case)
+      words.push({
+        word: token.word,
+        startMs: Math.round(token.start * 1000),
+        endMs: Math.round(token.end * 1000),
+      });
+    }
+  }
+
+  return words;
+}
+
+export function toWhisperResult(apiResult: ApiResult, verboseResult?: VerboseResult): WhisperResult {
+  const transcription: WhisperSegment[] = apiResult.segments.map((seg, i) => {
+    const segment: WhisperSegment = {
+      timestamps: {
+        from: formatTimestamp(seg.start),
+        to: formatTimestamp(seg.end),
+      },
+      offsets: {
+        from: Math.round(seg.start * 1000),
+        to: Math.round(seg.end * 1000),
+      },
+      text: seg.text,
+    };
+
+    // Match verbose segments by index (they correspond 1:1)
+    const verboseSeg = verboseResult?.segments[i];
+    if (verboseSeg?.words?.length) {
+      segment.words = mergeTokensToWords(verboseSeg.words);
+    }
+
+    return segment;
+  });
 
   return { transcription };
 }

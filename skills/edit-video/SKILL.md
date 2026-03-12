@@ -8,7 +8,7 @@ description: |
   (4) User mentions EDL, transcript analysis, or video editing workflow
   (5) User wants to remove filler, dead air, or silence from a video
   (6) User wants to combine multiple clips into one video
-  Triggers: "edit video", "transcribe video", "trim video", "cut video", "EDL", "video editing", "remove filler", "combine videos", "stitch clips", "multiple clips"
+  Triggers: "edit video", "transcribe video", "trim video", "cut video", "EDL", "video editing", "remove filler", "combine videos", "stitch clips", "multiple clips", "add captions", "shorts captions", "burn captions"
 ---
 
 # Edit Video
@@ -36,6 +36,7 @@ All paths are relative to this skill's directory. Run with `bun run`.
 | `scripts/transcribe.ts <directory>` | Transcribe all video files in a directory — produces merged JSON + markdown transcript + analysis in the directory |
 | `scripts/preview.ts <edl.json>` | Validate and preview an EDL before rendering |
 | `scripts/render.ts <edl.json>` | Render final video from EDL using ffmpeg stream copy |
+| `scripts/caption.ts <video> <transcript.json>` | Burn Shorts-style captions into video (optional `--edl`, `--output`) |
 
 ## Workflow — Single File
 
@@ -101,6 +102,16 @@ bun run scripts/render.ts <edl.json>
 
 Uses ffmpeg stream copy (fast, cuts at nearest keyframe). Produces the final video.
 
+### 5. Caption (Optional)
+
+```bash
+bun run scripts/caption.ts <edited-video.mp4> <transcript.json> --edl <edl.json>
+```
+
+Burns bold, centered captions (Hormozi style) into the video. Use `--edl` to remap transcript times to the edited video's timeline. Requires a full re-encode.
+
+See [references/caption-style.md](references/caption-style.md) for style defaults and customization.
+
 ## Workflow — Multiple Clips (Directory)
 
 Use this when the user has multiple short clips that should be edited into a single video.
@@ -134,6 +145,10 @@ Same process as single-file, but the transcript and analysis include a Source co
 ### 3. Preview + Render
 
 Same as single-file workflow. Preview lists all sources with durations and shows source filename per segment.
+
+### 4. Caption (Optional)
+
+Same as single-file — run `caption.ts` with `--edl` on the rendered output.
 
 ## Narrative Editing
 
@@ -178,6 +193,7 @@ The `outputPaths` function in `scripts/lib/config.ts` generates standard paths r
 | Analysis MD | `<name>-analysis.md` |
 | EDL | `<name>-edl.json` |
 | Edited video | `<name>-edited.mp4` |
+| Captioned video | `<name>-captioned.mp4` |
 
 ### Directory mode
 
@@ -200,7 +216,8 @@ The `directoryOutputPaths` function generates paths inside the directory:
 5. Write the EDL JSON file (each segment has `source` pointing to the video)
 6. Run `preview.ts` to validate — review with user
 7. Run `render.ts` to produce the final video
-8. Report output path and final duration
+8. (Optional) Run `caption.ts` with `--edl` if user wants Shorts-style captions
+9. Report output path and final duration
 
 ### Multiple clips
 
@@ -211,7 +228,8 @@ The `directoryOutputPaths` function generates paths inside the directory:
 5. Write the EDL JSON file (each segment has `source` pointing to its clip)
 6. Run `preview.ts` to validate — review with user
 7. Run `render.ts` to produce the combined video
-8. Report output path and final duration
+8. (Optional) Run `caption.ts` with `--edl` if user wants Shorts-style captions
+9. Report output path and final duration
 
 ## Tips
 
@@ -221,3 +239,5 @@ The `directoryOutputPaths` function generates paths inside the directory:
 - **Duration targeting**: When given a target duration, sum the `Dur` column values from the analysis for selected segments. Iterate until the EDL fits.
 - **Reinterpret signals**: Gaps aren't just cut candidates — they mark topic boundaries. Slow segments aren't always boring — a pause before a realization can be dramatic.
 - **Mixed codecs**: When combining clips from different sources, the preview tool warns about mixed file extensions. Clips from the same device/app are usually safe.
+- **Caption re-encoding**: Burning captions requires a full video encode (not stream copy), so it takes longer than rendering. Mention this to the user before starting.
+- **Offer captions**: When the user mentions Shorts, Reels, TikTok, or short-form content, offer to add Shorts-style captions after rendering.
