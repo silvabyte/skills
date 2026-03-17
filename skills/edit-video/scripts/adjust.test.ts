@@ -8,7 +8,7 @@ let tempDir: string;
 function makeEdl(segments: { source: string; start: string; end: string; label?: string }[]) {
   return {
     output: "/tmp/test-output.mp4",
-    segments: segments.map((s) => ({ source: s.source || "/tmp/a.mp4", ...s })),
+    segments: segments.map((s) => ({ ...s })),
   };
 }
 
