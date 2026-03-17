@@ -36,6 +36,7 @@ All paths are relative to this skill's directory. Run with `bun run`.
 | `scripts/transcribe.ts <directory>` | Transcribe all video files in a directory — produces merged JSON + markdown transcript + analysis in the directory |
 | `scripts/preview.ts <edl.json>` | Validate and preview an EDL before rendering |
 | `scripts/render.ts <edl.json>` | Render final video from EDL using ffmpeg stream copy |
+| `scripts/adjust.ts <edl.json> --segment N --start/--end <value>` | Adjust timestamps or remove segments in an existing EDL |
 | `scripts/caption.ts <video> <transcript.json>` | Burn Shorts-style captions into video (optional `--edl`, `--output`) |
 
 ## Workflow — Single File
@@ -93,6 +94,31 @@ bun run scripts/preview.ts <edl.json>
 ```
 
 Always preview before rendering. Shows segment breakdown, kept/cut percentages, and validates the EDL.
+
+### 3a. Adjust (Iterative Editing)
+
+After previewing, use `adjust.ts` for targeted tweaks instead of rewriting the EDL:
+
+```bash
+# Trim 0.5s off the end of segment 1
+bun run scripts/adjust.ts <edl.json> --segment 1 --end -0.5s
+
+# Move the start of segment 2 earlier by 1 second
+bun run scripts/adjust.ts <edl.json> --segment 2 --start -1s
+
+# Extend the end of segment 3 by 2 seconds
+bun run scripts/adjust.ts <edl.json> --segment 3 --end +2s
+
+# Set end of segment 1 to an exact timestamp
+bun run scripts/adjust.ts <edl.json> --segment 1 --end 00:05:30.000
+
+# Remove segment 2 entirely
+bun run scripts/adjust.ts <edl.json> --remove 2
+```
+
+Segment numbers are 1-based, matching the preview output. Relative deltas use `+Xs`/`-Xs` (supports decimals). Absolute values use `HH:MM:SS.mmm` format. The tool validates the result and prints an updated summary.
+
+Repeat preview + adjust as needed until the edit is right, then render.
 
 ### 4. Render
 
@@ -215,6 +241,7 @@ The `directoryOutputPaths` function generates paths inside the directory:
 4. Discuss with user what to keep/cut (or accept a narrative goal)
 5. Write the EDL JSON file (each segment has `source` pointing to the video)
 6. Run `preview.ts` to validate — review with user
+6a. If adjustments needed, run `adjust.ts` for targeted tweaks (repeat preview + adjust as needed)
 7. Run `render.ts` to produce the final video
 8. (Optional) Run `caption.ts` with `--edl` if user wants Shorts-style captions
 9. Report output path and final duration
@@ -227,6 +254,7 @@ The `directoryOutputPaths` function generates paths inside the directory:
 4. Discuss with user which clips/segments to include
 5. Write the EDL JSON file (each segment has `source` pointing to its clip)
 6. Run `preview.ts` to validate — review with user
+6a. If adjustments needed, run `adjust.ts` for targeted tweaks (repeat preview + adjust as needed)
 7. Run `render.ts` to produce the combined video
 8. (Optional) Run `caption.ts` with `--edl` if user wants Shorts-style captions
 9. Report output path and final duration
@@ -240,4 +268,5 @@ The `directoryOutputPaths` function generates paths inside the directory:
 - **Reinterpret signals**: Gaps aren't just cut candidates — they mark topic boundaries. Slow segments aren't always boring — a pause before a realization can be dramatic.
 - **Mixed codecs**: When combining clips from different sources, the preview tool warns about mixed file extensions. Clips from the same device/app are usually safe.
 - **Caption re-encoding**: Burning captions requires a full video encode (not stream copy), so it takes longer than rendering. Mention this to the user before starting.
+- **Iterative adjustments**: After the initial EDL is created, use `adjust.ts` for minor tweaks like trimming or extending segments. It handles timestamp arithmetic so you don't need to rewrite the EDL for small changes.
 - **Offer captions**: When the user mentions Shorts, Reels, TikTok, or short-form content, offer to add Shorts-style captions after rendering.

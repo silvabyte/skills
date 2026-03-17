@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { basename } from "path";
 
 const timestampRegex = /^\d{2}:\d{2}:\d{2}\.\d{3}$/;
 
@@ -58,6 +59,27 @@ export function calculateDuration(edl: Edl) {
     return sum + parseTimestamp(seg.end) - parseTimestamp(seg.start);
   }, 0);
   return { keptMs: kept };
+}
+
+/** Parse a value as either a relative delta or an absolute timestamp */
+export function parseDelta(value: string): { type: "relative"; deltaMs: number } | { type: "absolute"; ms: number } {
+  if (timestampRegex.test(value)) {
+    return { type: "absolute", ms: parseTimestamp(value) };
+  }
+  const deltaMatch = value.match(/^([+-]?\d+(\.\d+)?)s$/);
+  if (deltaMatch) {
+    const deltaMs = Math.round(parseFloat(deltaMatch[1]) * 1000);
+    return { type: "relative", deltaMs };
+  }
+  throw new Error(`Invalid value "${value}". Use a relative delta (+/-Xs, e.g. -0.5s) or absolute timestamp (HH:MM:SS.mmm).`);
+}
+
+/** Format a single segment as a display line matching preview output */
+export function formatSegmentLine(seg: Segment, index: number, multiSource: boolean): string {
+  const durMs = parseTimestamp(seg.end) - parseTimestamp(seg.start);
+  const label = seg.label ? ` (${seg.label})` : "";
+  const srcInfo = multiSource ? `  [${basename(seg.source)}]` : "";
+  return `  ${index + 1}. ${seg.start} -> ${seg.end}  [${formatDuration(durMs)}]${srcInfo}${label}`;
 }
 
 /** Format milliseconds as human-readable duration */

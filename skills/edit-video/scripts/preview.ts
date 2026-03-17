@@ -1,5 +1,5 @@
 import { resolve, basename } from "path";
-import { EdlSchema, allSources, calculateDuration, formatDuration, parseTimestamp } from "./lib/edl";
+import { EdlSchema, allSources, calculateDuration, formatDuration, parseTimestamp, formatSegmentLine } from "./lib/edl";
 import { getVideoDuration } from "./lib/ffmpeg";
 
 const edlPath = process.argv[2];
@@ -55,10 +55,7 @@ console.log(`Output:   ${edl.output}`);
 console.log(`Segments: ${edl.segments.length}\n`);
 
 edl.segments.forEach((seg, i) => {
-  const durMs = parseTimestamp(seg.end) - parseTimestamp(seg.start);
-  const label = seg.label ? ` (${seg.label})` : "";
-  const srcInfo = multiSource ? `  [${basename(seg.source)}]` : "";
-  console.log(`  ${i + 1}. ${seg.start} -> ${seg.end}  [${formatDuration(durMs)}]${srcInfo}${label}`);
+  console.log(formatSegmentLine(seg, i, multiSource));
 });
 
 // Detect non-chronological segment ordering (only within same source)
