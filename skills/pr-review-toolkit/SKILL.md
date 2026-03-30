@@ -1,17 +1,19 @@
 ---
 name: pr-review-toolkit
 description: >-
-  Comprehensive PR review using 6 specialized review protocols covering code quality,
-  test coverage, error handling, type design, comment accuracy, and code simplification.
+  Comprehensive PR review using 7 specialized review protocols covering code quality,
+  test coverage, error handling, type design, comment accuracy, code simplification,
+  and component coupling.
   Use when reviewing PRs, preparing code for merge, or auditing specific aspects of code changes.
   Triggers: "review PR", "review my PR", "PR review", "review pull request",
   "check test coverage", "review error handling", "analyze types",
-  "check comments", "simplify code", "code review", "pre-merge review".
+  "check comments", "simplify code", "code review", "pre-merge review",
+  "check coupling", "review coupling", "orthogonality review".
 ---
 
 # PR Review Toolkit
 
-Comprehensive code review using 6 specialized protocols, each focusing on a different aspect of code quality. Reviews can target specific aspects or run all applicable checks.
+Comprehensive code review using 7 specialized protocols, each focusing on a different aspect of code quality. Reviews can target specific aspects or run all applicable checks.
 
 ## Review Aspects
 
@@ -23,6 +25,7 @@ Comprehensive code review using 6 specialized protocols, each focusing on a diff
 | Type Design | `types` | Encapsulation, invariants | Types added/modified |
 | Comment Analysis | `comments` | Accuracy, completeness, rot | Comments/docs changed |
 | Code Simplification | `simplify` | Clarity, maintainability | After review passes |
+| Coupling Analysis | `coupling` | Component independence, dependency direction | New modules added or imports changed |
 
 ## Review Workflow
 
@@ -45,6 +48,7 @@ gh pr diff                    # If a PR exists
   - **If comments/docs added**: comment analysis
   - **If error handling changed**: silent failure hunting
   - **If types added/modified**: type design analysis
+  - **If new modules/files added or inter-module imports changed**: coupling analysis
   - **After passing review**: code simplification (polish)
 
 ### 3. Execute Reviews
@@ -92,6 +96,7 @@ Each protocol uses its own scoring to prioritize findings:
 | Type Design | 4 dimensions rated 1-10 | All reported |
 | Comment Analysis | Category: Critical/Improvement/Removal | All reported |
 | Code Simplification | Qualitative assessment | All reported |
+| Coupling Analysis | Red/Green flags → 4-tier rating | All reported |
 
 ## Usage Examples
 
@@ -110,11 +115,12 @@ Each protocol uses its own scoring to prioritize findings:
 
 ```
 1. Write code           → code review + error handling
-2. Fix critical issues  → re-run targeted reviews
-3. Add tests            → test analysis
-4. Add documentation    → comment analysis
-5. Final polish         → code simplification
-6. Create PR
+2. Review architecture  → coupling analysis
+3. Fix critical issues  → re-run targeted reviews
+4. Add tests            → test analysis
+5. Add documentation    → comment analysis
+6. Final polish         → code simplification
+7. Create PR
 ```
 
 ## Best Practices
@@ -134,3 +140,4 @@ Each protocol uses its own scoring to prioritize findings:
 - [Test Analysis Protocol](references/test-analyzer.md) — Behavioral coverage quality and gap identification. Load when analyzing test coverage.
 - [Silent Failure Hunting Protocol](references/silent-failure-hunter.md) — Error handling audit with zero tolerance for silent failures. Load when reviewing error handling.
 - [Type Design Analysis Protocol](references/type-design-analyzer.md) — Encapsulation, invariant expression, and enforcement ratings. Load when analyzing type design.
+- [Coupling Analysis Protocol](references/coupling-analyzer.md) — Component independence evaluation using red/green flag heuristics. Load when analyzing coupling.
