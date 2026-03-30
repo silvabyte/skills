@@ -11,6 +11,7 @@ Reusable skills for team coding agents.
 | [orthogonal-code](skills/orthogonal-code) | Writing and reviewing orthogonal (decoupled) code |
 | [marketing-principles](skills/marketing-principles) | Apply proven marketing principles for compelling copy, campaigns, and brand positioning |
 | [edit-video](skills/edit-video) | Conversational video editing: transcribe, plan edits with transcript analysis, render |
+| [pr-review-toolkit](skills/pr-review-toolkit) | Comprehensive PR review with 6 specialized review protocols |
 
 ## Installation
 
