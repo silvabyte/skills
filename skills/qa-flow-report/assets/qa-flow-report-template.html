@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{{title}} — QA flow report</title>
+    <style>
+      :root {
+        --bg: #f6f7f9;
+        --card: #ffffff;
+        --border: #e3e6ea;
+        --text: #1f2328;
+        --muted: #57606a;
+        --pass: #1a7f37;
+        --pass-bg: #dcfce7;
+        --fail: #cf222e;
+        --fail-bg: #ffebe9;
+        --note: #9a6700;
+        --note-bg: #fff8c5;
+        --accent: #0969da;
+        --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.5;
+        padding: 32px 24px 64px;
+      }
+      .wrap { max-width: 1100px; margin: 0 auto; }
+      header.report-header {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+      }
+      header.report-header h1 {
+        margin: 0 0 12px;
+        font-size: 22px;
+        font-weight: 600;
+      }
+      .meta {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: 6px 16px;
+        font-size: 14px;
+        color: var(--muted);
+        margin-bottom: 16px;
+      }
+      .meta dt { font-weight: 500; color: var(--text); }
+      .meta dd { margin: 0; font-family: var(--mono); font-size: 13px; word-break: break-all; }
+      .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 500;
+        border: 1px solid transparent;
+      }
+      .chip.pass { background: var(--pass-bg); color: var(--pass); }
+      .chip.fail { background: var(--fail-bg); color: var(--fail); }
+      .chip.note { background: var(--note-bg); color: var(--note); }
+      .chip.neutral { background: #eaeef2; color: var(--muted); }
+
+      h2.section-heading {
+        font-size: 14px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+        margin: 32px 0 12px;
+      }
+
+      .steps { display: grid; gap: 16px; }
+      .step {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: 220px 1fr;
+      }
+      .step.fail { border-color: var(--fail); }
+      .step .thumb {
+        background: #0d1117;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: zoom-in;
+        min-height: 160px;
+      }
+      .step .thumb img {
+        max-width: 100%;
+        max-height: 280px;
+        display: block;
+      }
+      .step .thumb.empty {
+        color: #8b949e;
+        font-size: 13px;
+        font-family: var(--mono);
+      }
+      .step .body { padding: 16px 20px; }
+      .step .head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+      .step .num {
+        font-family: var(--mono);
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .step .name {
+        font-size: 16px;
+        font-weight: 600;
+        flex: 1;
+      }
+      .step .notes { color: var(--muted); font-size: 14px; margin: 0 0 10px; }
+      .step .file {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+
+      details {
+        border-top: 1px solid var(--border);
+        padding: 8px 0 0;
+        margin-top: 8px;
+      }
+      details summary {
+        cursor: pointer;
+        font-size: 13px;
+        color: var(--accent);
+        list-style: none;
+        user-select: none;
+        padding: 4px 0;
+      }
+      details summary::-webkit-details-marker { display: none; }
+      details summary::before { content: "▸ "; color: var(--muted); }
+      details[open] summary::before { content: "▾ "; }
+      details .log {
+        font-family: var(--mono);
+        font-size: 12px;
+        background: #0d1117;
+        color: #c9d1d9;
+        padding: 12px;
+        border-radius: 6px;
+        margin-top: 8px;
+        max-height: 320px;
+        overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .log .lvl { display: inline-block; width: 56px; color: #8b949e; }
+      .log .lvl.error { color: #ff7b72; }
+      .log .lvl.warn { color: #d29922; }
+      .log .row.error { color: #ffa198; }
+      .log .row.warn { color: #e3b341; }
+      .log .net-status.ok { color: #56d364; }
+      .log .net-status.bad { color: #ff7b72; }
+
+      .appendix {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 32px;
+      }
+      .appendix details { border-top: none; }
+      .appendix details + details { border-top: 1px solid var(--border); margin-top: 12px; }
+
+      footer.report-footer {
+        margin-top: 32px;
+        text-align: center;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      footer.report-footer a { color: var(--accent); text-decoration: none; }
+      footer.report-footer a:hover { text-decoration: underline; }
+
+      /* Lightbox */
+      .lightbox {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.92);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        cursor: zoom-out;
+        padding: 32px;
+      }
+      .lightbox.open { display: flex; }
+      .lightbox img { max-width: 100%; max-height: 100%; box-shadow: 0 0 40px rgba(0,0,0,0.5); }
+
+      @media (max-width: 720px) {
+        .step { grid-template-columns: 1fr; }
+        .step .thumb { max-height: 200px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="report-header">
+        <h1>{{title}}</h1>
+        <dl class="meta">
+          <dt>URL</dt><dd>{{url}}</dd>
+          <dt>Started</dt><dd>{{startedAt}}</dd>
+          <dt>Viewport</dt><dd>{{viewport}}</dd>
+        </dl>
+        <div class="chips">
+          <span class="chip pass">{{passCount}} pass</span>
+          <span class="chip fail">{{failCount}} fail</span>
+          <span class="chip note">{{noteCount}} note</span>
+          <span class="chip neutral">{{consoleErrorCount}} console errors</span>
+          <span class="chip neutral">{{consoleWarningCount}} warnings</span>
+          <span class="chip neutral">{{networkFailureCount}} network failures</span>
+        </div>
+      </header>
+
+      <h2 class="section-heading">Steps</h2>
+      <div class="steps">
+        {{stepsHtml}}
+      </div>
+
+      <h2 class="section-heading">Appendix — full logs</h2>
+      <div class="appendix">
+        <details>
+          <summary>All console messages ({{allConsoleCount}})</summary>
+          <pre class="log">{{allConsoleHtml}}</pre>
+        </details>
+        <details>
+          <summary>All network requests ({{allNetworkCount}})</summary>
+          <pre class="log">{{allNetworkHtml}}</pre>
+        </details>
+      </div>
+
+      <footer class="report-footer">
+        Generated {{generatedAt}} · <a href="screenshots/">open screenshots dir</a>
+      </footer>
+    </div>
+
+    <div class="lightbox" id="lightbox" onclick="this.classList.remove('open')">
+      <img id="lightbox-img" alt="" />
+    </div>
+    <script>
+      document.querySelectorAll(".thumb img").forEach(img => {
+        img.parentElement.addEventListener("click", () => {
+          const lb = document.getElementById("lightbox");
+          document.getElementById("lightbox-img").src = img.src;
+          lb.classList.add("open");
+        });
+      });
+      document.addEventListener("keydown", e => {
+        if (e.key === "Escape") document.getElementById("lightbox").classList.remove("open");
+      });
+    </script>
+  </body>
+</html>

@@ -13,6 +13,7 @@ Reusable skills for team coding agents.
 | [edit-video](skills/edit-video) | Conversational video editing: transcribe, plan edits with transcript analysis, render |
 | [pr-review-toolkit](skills/pr-review-toolkit) | Comprehensive PR review with 7 specialized review protocols |
 | [unglaze](skills/unglaze) | Rewrite glazy, eye-glazing content into a tight, scannable engineering voice |
+| [qa-flow-report](skills/qa-flow-report) | Drive a UI flow via chrome-devtools MCP, capture a screenshot per step, render a self-contained HTML QA report |
 
 ## Installation
 
