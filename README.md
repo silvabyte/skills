@@ -14,6 +14,7 @@ Reusable skills for team coding agents.
 | [pr-review-toolkit](skills/pr-review-toolkit) | Comprehensive PR review with 7 specialized review protocols |
 | [unglaze](skills/unglaze) | Rewrite glazy, eye-glazing content into a tight, scannable engineering voice |
 | [qa-flow-report](skills/qa-flow-report) | Drive a UI flow via chrome-devtools MCP, capture a screenshot per step, render a self-contained HTML QA report |
+| [context-ramp](skills/context-ramp) | Turn dense context into source-grounded visual-auditory micro-lessons with active recall |
 
 ## Installation
 
