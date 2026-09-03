@@ -1,6 +1,6 @@
 ---
 name: unglaze
-description: Rewrite glazy, eye-glazing generated content into a tight, scannable, bullet-tight engineering voice. Use when the user says "unglaze", "ungloss this", "punch this up", "tighten this", "less glazy", "eyes glaze", "make my eyes not glaze", "cut the fluff", "rewrite punchier", "make it sharper", "less corporate", "de-fluff", "less LLM-flavored". Also auto-triggers on dissatisfaction signals like "ugh too long", "tldr this", "this is boring", "too much". Applies to PR review output, research summaries, design docs, plans, proposals, and any human-readable artifact the agent produced or the user shared. Out of scope: meeting transcripts (handled by message-in-a-bottle / uncork).
+description: 'Rewrite glazy, eye-glazing generated content into a tight, scannable, bullet-tight engineering voice. Use when the user says "unglaze", "ungloss this", "punch this up", "tighten this", "less glazy", "eyes glaze", "make my eyes not glaze", "cut the fluff", "rewrite punchier", "make it sharper", "less corporate", "de-fluff", "less LLM-flavored". Also auto-triggers on dissatisfaction signals like "ugh too long", "tldr this", "this is boring", "too much". Applies to PR review output, research summaries, design docs, plans, proposals, and any human-readable artifact the agent produced or the user shared. Out of scope: meeting transcripts (handled by message-in-a-bottle / uncork).'
 ---
 
 # Skill: unglaze
