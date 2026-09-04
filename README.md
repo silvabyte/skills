@@ -18,6 +18,7 @@ Reusable skills for team coding agents.
 | [ask-silva](skills/ask-silva) | Router over the engineering flow (idea → spec → tickets → implement) with the `unglaze` output contract applied throughout |
 | [to-spec](skills/to-spec) | Fork of upstream `to-spec`: spec opens with an `At a glance` block; smallest complete user-story set |
 | [handoff](skills/handoff) | Fork of upstream `handoff`: `At a glance` block first, `unglaze` voice |
+| [diagramming](skills/diagramming) | Create and revise source-grounded, editable Excalidraw diagrams |
 
 ## Upstream forks
 
