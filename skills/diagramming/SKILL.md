@@ -55,9 +55,18 @@ fact from proposal without a verbal walkthrough.
 
 ## 4. Author the editable source
 
-Follow the destination repository's existing diagram convention. If none exists, ask where the
-durable source belongs rather than scattering it into an arbitrary application folder. Use
-`.excalidraw` as the source of truth; exports such as PNG, SVG, and PDF are renditions.
+Resolve the durable destination in this order:
+
+1. A path or repository named by the user.
+2. `$DIAGRAMS_REPO` when it is set.
+3. `~/code/diagrams` when that repository exists.
+4. The current repository's existing diagram convention.
+
+If none applies, ask where the durable source belongs rather than scattering it into an arbitrary
+application folder. In the default diagrams repository, place scenes under
+`drawings/work/<project>/`, `drawings/personal/<topic>/`, or `drawings/learning/<topic>/`; ask one
+short question if the collection cannot be inferred. Use `.excalidraw` as the source of truth;
+exports such as PNG, SVG, and PDF are renditions.
 
 For a new scene, start from [`assets/blank.excalidraw`](assets/blank.excalidraw) or create the scene in
 Excalidraw. For graph-like content, Mermaid imported through Excalidraw is a useful first layout, not
